@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import { environment } from "@/config/environment";
-import { logger } from "@/utils/logger";
+import { environment } from "./environment";
+import { logger } from "../utils/logger";
 export const connectDB = async (): Promise<void> => {
   try {
     const url = environment.MONGODB_URI;

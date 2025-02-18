@@ -5,6 +5,7 @@ export interface IUser extends Document {
   telegramId: number;
   name: string;
   dateOfBirth?: string;
+  username: string;
   gender?: "male" | "female" | "other";
   photoUrl?: string;
   interests: string[];
@@ -18,6 +19,7 @@ const userSchema = new Schema<IUser>(
   {
     telegramId: { type: Number, required: true, unique: true },
     name: { type: String, required: true },
+    username: { type: String, required: true },
     dateOfBirth: { type: String },
     gender: { type: String, enum: ["male", "female", "other"] },
     photoUrl: { type: String },
@@ -33,7 +35,8 @@ const userSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
-// Add helper method to get active matches
+userSchema.index({ username: 1 }, { unique: true });
+
 userSchema.methods.getActiveMatches = function () {
   return Match.find({
     users: this._id,
