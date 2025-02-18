@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
+import { Match } from "./match.model";
 
 export interface IUser extends Document {
   telegramId: number;
@@ -8,7 +9,7 @@ export interface IUser extends Document {
   photoUrl?: string;
   interests: string[];
   likes: number[];
-  matches: number[];
+  matches: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,9 +23,22 @@ const userSchema = new Schema<IUser>(
     photoUrl: { type: String },
     interests: [{ type: String }],
     likes: [{ type: Number }],
-    matches: [{ type: Number }],
+    matches: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Match",
+      },
+    ],
   },
   { timestamps: true }
 );
+
+// Add helper method to get active matches
+userSchema.methods.getActiveMatches = function () {
+  return Match.find({
+    users: this._id,
+    status: "active",
+  }).populate("users", "name photoUrl");
+};
 
 export const User = mongoose.model<IUser>("User", userSchema);
