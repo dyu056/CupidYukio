@@ -21,6 +21,7 @@ import {
   handleBrowseMatches,
   handleBrowseAction,
 } from "./handlers/browse.handler";
+import { handleViewMatches } from "./handlers/match.handler";
 
 export class TelegramBot {
   private bot: Telegraf;
@@ -86,10 +87,7 @@ export class TelegramBot {
     this.bot.command("profile", handleProfileView);
     this.bot.hears("My Profile 👤", handleProfileView);
     this.bot.hears("Update Profile ✏️", handleProfileUpdate);
-    this.bot.hears("My Matches 💕", async (ctx) => {
-      // TODO: Implement matches view
-      await ctx.reply("Coming soon: View your matches!");
-    });
+    this.bot.hears("My Matches 💕", handleViewMatches);
     // Browse matches handling
     this.bot.hears("Browse Matches 👥", handleBrowseMatches);
     this.bot.hears("Continue Browsing 👥", handleBrowseMatches);
