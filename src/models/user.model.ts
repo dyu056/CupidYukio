@@ -1,5 +1,4 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { Match } from "./match.model";
 
 export interface IUser extends Document {
   telegramId: number;
@@ -29,7 +28,7 @@ const userSchema = new Schema<IUser>(
     matches: [
       {
         type: Schema.Types.ObjectId,
-        ref: "Match",
+        ref: "User",
       },
     ],
     isOnboarded: { type: Boolean, default: false },
@@ -38,12 +37,5 @@ const userSchema = new Schema<IUser>(
 );
 
 userSchema.index({ username: 1 }, { unique: true });
-
-userSchema.methods.getActiveMatches = function () {
-  return Match.find({
-    users: this._id,
-    status: "active",
-  }).populate("users", "name photoUrl");
-};
 
 export const User = mongoose.model<IUser>("User", userSchema);

@@ -137,7 +137,7 @@ export async function handleBrowseAction(ctx: Context) {
 
         if (action === "👍 Like") {
           // Add to likes
-          await User.findOneAndUpdate(
+          const currentUser = await User.findOneAndUpdate(
             { telegramId: ctx.from.id },
             { $addToSet: { likes: ctx.session.browsing.currentMatchId } }
           );
@@ -151,6 +151,20 @@ export async function handleBrowseAction(ctx: Context) {
               (like) => (like as any).telegramId === ctx.from?.id
             )
           ) {
+            // Get current user's MongoDB document
+            // const currentUser = await User.findOne({ telegramId: ctx.from.id });
+            if (!currentUser) return;
+
+            // Add users to each other's matches
+            await Promise.all([
+              User.findByIdAndUpdate(currentUser._id, {
+                $addToSet: { matches: likedUser._id },
+              }),
+              User.findByIdAndUpdate(likedUser._id, {
+                $addToSet: { matches: currentUser._id },
+              }),
+            ]);
+
             await ctx.reply(
               "It's a match! 🎉\nYou can find them in your matches.",
               Markup.keyboard([
