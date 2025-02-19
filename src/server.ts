@@ -14,8 +14,7 @@ import {
   handleUpdateField,
 } from "./handlers/profile-update.handler";
 import { mongoSession } from "./middleware/session.middleware";
-
-// Load environment variables
+import { User } from "./models/user.model";
 
 export class TelegramBot {
   private bot: Telegraf;
@@ -25,6 +24,7 @@ export class TelegramBot {
     this.bot = new Telegraf(environment.TELEGRAM_BOT_TOKEN);
     this.setupMiddleware();
     this.setupCommands();
+    this.setupMenuCommand();
     this.setupErrorHandling();
   }
 
@@ -44,42 +44,100 @@ export class TelegramBot {
   }
 
   private setupCommands(): void {
-    // Start command
-    this.bot.command("start", async (ctx) => {
-      try {
-        if (!ctx.from) {
+    // Handle all commands first
+    this.bot.on("text", async (ctx, next) => {
+      const text = ctx.message.text;
+      if (!text.startsWith("/")) return next();
+
+      // Handle /start command
+      if (text === "/start") {
+        // Prevent duplicate handling
+        if (ctx.session?.handledStart) return next();
+        ctx.session = { ...ctx.session, handledStart: true };
+
+        try {
+          if (!ctx.from) return;
+
+          const { user, isNew } = await userService.findOrCreateUser(ctx.from);
+
+          if (!user.isOnboarded) {
+            await ctx.reply(
+              "Welcome to the Dating Bot! 💝\n" +
+                "I'll help you find your perfect match.",
+              Markup.keyboard([
+                [Markup.button.text("Start Profile Setup 🎯")],
+              ]).resize()
+            );
+            // Clear the flag after a short delay
+            setTimeout(() => {
+              if (ctx.session) delete ctx.session.handledStart;
+            }, 1000);
+            return;
+          }
+
+          await ctx.reply(
+            "Welcome back! \n" + "What would you like to do?",
+            Markup.keyboard([
+              ["My Profile 👤", "Browse Matches 👥"],
+              ["My Matches 💕", "Update Profile ✏️"],
+            ]).resize()
+          );
+          // Clear the flag after a short delay
+          setTimeout(() => {
+            if (ctx.session) delete ctx.session.handledStart;
+          }, 1000);
+          return;
+        } catch (error) {
+          logger.error("Error in start command:", error);
+          await ctx.reply("Sorry, something went wrong. Please try again.");
           return;
         }
-
-        const { user, isNew } = await userService.findOrCreateUser(ctx.from);
-
-        if (isNew) {
-          // Show welcome message with start button
-          await ctx.reply(
-            "Welcome to the Dating Bot! 💝\n" +
-              "I'll help you find your perfect match.",
-            Markup.keyboard([
-              [Markup.button.text("Start Profile Setup 🎯")],
-            ]).resize()
-          );
-        } else {
-          // Existing user
-          await ctx.reply(
-            "Welcome back! ��\n" + "What would you like to do?",
-            Markup.keyboard([
-              [Markup.button.text("Update Profile ✏️")],
-              [Markup.button.text("Browse Matches 👥")],
-            ]).resize()
-          );
-        }
-      } catch (error) {
-        logger.error("Error in start command:", error);
-        await ctx.reply("Sorry, something went wrong. Please try again.");
       }
+
+      // Handle /menu command
+      if (text === "/menu") {
+        await ctx.reply(
+          "What would you like to do?",
+          Markup.keyboard([
+            ["My Profile 👤", "Browse Matches 👥"],
+            ["My Matches 💕", "Update Profile ✏️"],
+          ]).resize()
+        );
+        return;
+      }
+
+      // Handle /help command
+      if (text === "/help") {
+        logger.info(`User ${ctx.from?.id} requested help`);
+        await ctx.reply(
+          "Available commands:\n\n" +
+            "/start - Start the bot\n" +
+            "/menu - Show main menu\n" +
+            "/help - Show this help message"
+        );
+        return;
+      }
+
+      // Unknown commands
+      logger.warning(`Unknown command attempted: ${text}`);
+      await ctx.reply("Unknown command. Use /help to see available commands.");
     });
 
     // Handle button responses
-    this.bot.hears("Start Profile Setup 🎯", handleProfileSetup);
+    this.bot.hears("Start Profile Setup 🎯", async (ctx) => {
+      if (!ctx.from) return;
+      const user = await User.findOne({ telegramId: ctx.from.id });
+      if (!user?.isOnboarded) {
+        return handleProfileSetup(ctx);
+      }
+      return ctx.reply(
+        "Your profile is already set up! You can update it using the Update Profile button.",
+        Markup.keyboard([
+          ["My Profile 👤", "Browse Matches 👥"],
+          ["My Matches 💕", "Update Profile ✏️"],
+        ]).resize()
+      );
+    });
 
     // Handle profile setup flow
     this.bot.on("text", async (ctx, next) => {
@@ -103,29 +161,6 @@ export class TelegramBot {
       return next();
     });
 
-    // Help command
-    this.bot.command("help", async (ctx) => {
-      logger.info(`User ${ctx.from?.id} requested help`);
-      await ctx.reply(
-        "Available commands:\n\n" +
-          "/start - Start the bot\n" +
-          "/profile - Create or update your profile\n" +
-          "/photo - Update your profile photo\n" +
-          "/browse - Browse other profiles\n" +
-          "/matches - View your matches\n" +
-          "/help - Show this help message"
-      );
-    });
-
-    // Profile photo handling
-    // this.bot.command("photo", handleProfilePhoto);
-    // this.bot.on("message", (ctx, next) => {
-    //   if ("photo" in ctx.message) {
-    //     return handleProfilePhoto(ctx);
-    //   }
-    //   return next();
-    // });
-
     // Profile view handling
     this.bot.command("profile", handleProfileView);
     this.bot.hears("My Profile 👤", handleProfileView);
@@ -141,7 +176,14 @@ export class TelegramBot {
 
     // Handle profile update options
     this.bot.hears(
-      ["Age ⌛", "Gender ⚧", "Photo 📸", "Interests 🎯", "Cancel ❌"],
+      [
+        "Name 📛",
+        "Age ⌛",
+        "Gender ⚧",
+        "Photo 📸",
+        "Interests 🎯",
+        "Cancel ❌",
+      ],
       handleUpdateField
     );
 
@@ -164,16 +206,15 @@ export class TelegramBot {
       }
       return next();
     });
+  }
 
-    // Handle unknown commands
-    this.bot.on("text", async (ctx) => {
-      if (ctx.message.text.startsWith("/")) {
-        logger.warning(`Unknown command attempted: ${ctx.message.text}`);
-        await ctx.reply(
-          "Unknown command. Use /help to see available commands."
-        );
-      }
-    });
+  private async setupMenuCommand() {
+    // Set up persistent menu command
+    await this.bot.telegram.setMyCommands([
+      { command: "start", description: "Start the bot" },
+      { command: "menu", description: "Show main menu" },
+      { command: "help", description: "Show help" },
+    ]);
   }
 
   private setupErrorHandling(): void {

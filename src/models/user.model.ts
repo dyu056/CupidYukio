@@ -11,6 +11,7 @@ export interface IUser extends Document {
   interests: string[];
   likes: number[];
   matches: mongoose.Types.ObjectId[];
+  isOnboarded: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +32,7 @@ const userSchema = new Schema<IUser>(
         ref: "Match",
       },
     ],
+    isOnboarded: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

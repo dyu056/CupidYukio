@@ -22,62 +22,68 @@ export async function handleUpdateField(ctx: Context) {
 
   const action = ctx.message.text;
 
-  switch (action) {
-    case "Name 📛":
-      await ctx.reply("Please enter your new name:", Markup.removeKeyboard());
-      ctx.session.updateField = "name";
-      break;
+  // Handle update field selection
+  if (!ctx.session.updateField) {
+    switch (action) {
+      case "Name 📛":
+        await ctx.reply("Please enter your new name:", Markup.removeKeyboard());
+        ctx.session.updateField = "name";
+        break;
 
-    case "Age ⌛":
-      await ctx.reply("Please enter your new age:", Markup.removeKeyboard());
-      ctx.session.updateField = "age";
-      break;
+      case "Age ⌛":
+        await ctx.reply("Please enter your new age:", Markup.removeKeyboard());
+        ctx.session.updateField = "age";
+        break;
 
-    case "Gender ⚧":
-      await ctx.reply(
-        "Please select your gender:",
-        Markup.keyboard([["Male 👨", "Female 👩"], ["Other 🌈"]]).resize()
-      );
-      ctx.session.updateField = "gender";
-      break;
+      case "Gender ⚧":
+        await ctx.reply(
+          "Please select your gender:",
+          Markup.keyboard([["Male 👨", "Female 👩"], ["Other 🌈"]]).resize()
+        );
+        ctx.session.updateField = "gender";
+        break;
 
-    case "Interests 🎯":
-      await ctx.reply(
-        "Let's update your interests!\nYou can enter multiple interests separated by commas.",
-        Markup.keyboard([
-          ["Sports", "Music", "Travel"],
-          ["Movies", "Food", "Books"],
-          ["Done ✅"],
-        ]).resize()
-      );
-      ctx.session.updateField = "interests";
-      ctx.session.newInterests = [];
-      break;
+      case "Interests 🎯":
+        await ctx.reply(
+          "Let's update your interests!\nYou can enter multiple interests separated by commas.",
+          Markup.keyboard([
+            ["Sports", "Music", "Travel"],
+            ["Movies", "Food", "Books"],
+            ["Done ✅"],
+          ]).resize()
+        );
+        ctx.session.updateField = "interests";
+        ctx.session.newInterests = [];
+        break;
 
-    case "Photo 📸":
-      await ctx.reply(
-        "Please send me your new profile photo:",
-        Markup.removeKeyboard()
-      );
-      ctx.session.updateField = "photo";
-      break;
+      case "Photo 📸":
+        await ctx.reply(
+          "Please send me your new profile photo.\nOnly photos are accepted, other messages will be ignored.",
+          Markup.removeKeyboard()
+        );
+        ctx.session.updateField = "photo";
+        break;
 
-    case "Cancel ❌":
-      delete ctx.session.updateField;
-      delete ctx.session.newInterests;
-      await ctx.reply(
-        "Update cancelled. Back to profile.",
-        Markup.keyboard([
-          ["My Profile 👤", "Browse Matches 👥"],
-          ["My Matches 💕", "Update Profile ✏️"],
-        ]).resize()
-      );
-      break;
+      case "Cancel ❌":
+        delete ctx.session.updateField;
+        delete ctx.session.newInterests;
+        await ctx.reply(
+          "Update cancelled. Back to profile.",
+          Markup.keyboard([
+            ["My Profile 👤", "Browse Matches 👥"],
+            ["My Matches 💕", "Update Profile ✏️"],
+          ]).resize()
+        );
+        break;
 
-    default:
-      await handleUpdateValue(ctx);
-      break;
+      default:
+        return;
+    }
+    return;
   }
+
+  // Handle update value input
+  await handleUpdateValue(ctx);
 }
 
 async function handleUpdateValue(ctx: Context) {

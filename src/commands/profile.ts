@@ -28,6 +28,9 @@ export async function handleProfilePhoto(ctx: Context) {
       }
 
       user.photoUrl = imageUrl;
+      if (!user.isOnboarded) {
+        user.isOnboarded = true;
+      }
       await user.save();
 
       await ctx.reply("Profile photo updated successfully! ✨");

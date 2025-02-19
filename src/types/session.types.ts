@@ -13,6 +13,7 @@ export interface SessionData {
   profileSetup?: ProfileSetupState;
   updateField?: "name" | "age" | "gender" | "interests" | "photo";
   newInterests?: string[];
+  handledStart?: boolean;
 }
 
 // Extend Telegraf Context to include our session data

@@ -54,7 +54,7 @@ async function handleAgeInput(ctx: Context) {
   if (!ctx.message || !ctx.from) return;
   ensureProfileSetup(ctx);
   if (!("text" in ctx.message)) {
-    return await ctx.reply("Please enter a valid age number.");
+    return await ctx.reply("Please enter your age as a number.");
   }
 
   const age = ctx.message.text;
