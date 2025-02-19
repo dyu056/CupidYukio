@@ -8,6 +8,7 @@ import connectDB from "./config/db";
 import { userService } from "./services/user.service";
 import { Markup } from "telegraf";
 import { handleProfileSetup } from "./handlers/profile-setup.handler";
+import { handleProfileView } from "./handlers/profile.handler";
 
 // Load environment variables
 
@@ -119,6 +120,19 @@ export class TelegramBot {
     //   }
     //   return next();
     // });
+
+    // Profile view handling
+    this.bot.command("profile", handleProfileView);
+    this.bot.hears("My Profile 👤", handleProfileView);
+    this.bot.hears("Update Profile ✏️", handleProfileSetup);
+    this.bot.hears("My Matches 💕", async (ctx) => {
+      // TODO: Implement matches view
+      await ctx.reply("Coming soon: View your matches!");
+    });
+    this.bot.hears("Browse Matches 👥", async (ctx) => {
+      // TODO: Implement browse matches
+      await ctx.reply("Coming soon: Browse potential matches!");
+    });
 
     // Handle unknown commands
     this.bot.on("text", async (ctx) => {

@@ -4,7 +4,7 @@ import { Match } from "./match.model";
 export interface IUser extends Document {
   telegramId: number;
   name: string;
-  dateOfBirth?: string;
+  age?: string;
   username: string;
   gender?: "male" | "female" | "other";
   photoUrl?: string;
@@ -20,7 +20,7 @@ const userSchema = new Schema<IUser>(
     telegramId: { type: Number, required: true, unique: true },
     name: { type: String, required: true },
     username: { type: String, required: true },
-    dateOfBirth: { type: String },
+    age: { type: String },
     gender: { type: String, enum: ["male", "female", "other"] },
     photoUrl: { type: String },
     interests: [{ type: String }],

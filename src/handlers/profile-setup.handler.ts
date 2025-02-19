@@ -92,8 +92,8 @@ async function handleGenderInput(ctx: Context) {
     "Perfect! Now, tell me about your interests.\n" +
       "You can enter multiple interests separated by commas.",
     Markup.keyboard([
-      ["Sports 🏃‍♂️", "Music 🎵", "Travel ✈️"],
-      ["Movies 🎬", "Food 🍕", "Books 📚"],
+      ["Sports", "Music", "Travel"],
+      ["Movies", "Food", "Books"],
       ["Done ✅"],
     ]).resize()
   );
@@ -159,8 +159,11 @@ async function handlePhotoInput(ctx: Context) {
 
     await ctx.reply(
       "Perfect! Your profile is now complete. 🎉\n" +
-        "You can start browsing matches or update your profile anytime.",
-      Markup.keyboard([["Browse Matches 👥"], ["Update Profile ✏️"]]).resize()
+        "What would you like to do next?",
+      Markup.keyboard([
+        ["My Profile 👤", "Browse Matches 👥"],
+        ["My Matches 💕", "Update Profile ✏️"],
+      ]).resize()
     );
   } catch (error) {
     logger.error("Error saving photo:", error);
