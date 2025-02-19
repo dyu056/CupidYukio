@@ -33,16 +33,16 @@ export async function handleProfileView(ctx: Context) {
         caption: profileText,
         parse_mode: "Markdown",
         ...Markup.keyboard([
-          ["My Matches 💕", "Browse Matches 👥"],
-          ["Update Profile ✏️"],
+          ["My Profile 👤", "Browse Matches 👥"],
+          ["My Matches 💕", "Update Profile ✏️"],
         ]).resize(),
       });
     } else {
       await ctx.reply(profileText, {
         parse_mode: "Markdown",
         ...Markup.keyboard([
-          ["My Matches 💕", "Browse Matches 👥"],
-          ["Update Profile ✏️"],
+          ["My Profile 👤", "Browse Matches 👥"],
+          ["My Matches 💕", "Update Profile ✏️"],
         ]).resize(),
       });
     }

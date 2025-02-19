@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
-import { Telegraf, session } from "telegraf";
+import { Telegraf } from "telegraf";
 import { environment } from "./config/environment";
 import { handleProfilePhoto } from "./commands/profile";
 import { logger } from "./utils/logger";
@@ -9,6 +9,11 @@ import { userService } from "./services/user.service";
 import { Markup } from "telegraf";
 import { handleProfileSetup } from "./handlers/profile-setup.handler";
 import { handleProfileView } from "./handlers/profile.handler";
+import {
+  handleProfileUpdate,
+  handleUpdateField,
+} from "./handlers/profile-update.handler";
+import { mongoSession } from "./middleware/session.middleware";
 
 // Load environment variables
 
@@ -24,8 +29,8 @@ export class TelegramBot {
   }
 
   private setupMiddleware(): void {
-    // Enable session handling
-    this.bot.use(session());
+    // Enable MongoDB session handling
+    this.bot.use(mongoSession);
 
     // Log all updates
     if (process.env.NODE_ENV !== "production") {
@@ -124,7 +129,7 @@ export class TelegramBot {
     // Profile view handling
     this.bot.command("profile", handleProfileView);
     this.bot.hears("My Profile 👤", handleProfileView);
-    this.bot.hears("Update Profile ✏️", handleProfileSetup);
+    this.bot.hears("Update Profile ✏️", handleProfileUpdate);
     this.bot.hears("My Matches 💕", async (ctx) => {
       // TODO: Implement matches view
       await ctx.reply("Coming soon: View your matches!");
@@ -132,6 +137,32 @@ export class TelegramBot {
     this.bot.hears("Browse Matches 👥", async (ctx) => {
       // TODO: Implement browse matches
       await ctx.reply("Coming soon: Browse potential matches!");
+    });
+
+    // Handle profile update options
+    this.bot.hears(
+      ["Age ⌛", "Gender ⚧", "Photo 📸", "Interests 🎯", "Cancel ❌"],
+      handleUpdateField
+    );
+
+    // Handle update values
+    this.bot.on(["text", "photo"], async (ctx, next) => {
+      if (ctx.session?.updateField) {
+        if (ctx.session.updateField === "photo" && "photo" in ctx.message) {
+          await handleProfilePhoto(ctx);
+          delete ctx.session.updateField;
+          await ctx.reply(
+            "Profile photo updated successfully! ✨",
+            Markup.keyboard([
+              ["My Profile 👤", "Browse Matches 👥"],
+              ["My Matches 💕", "Update Profile ✏️"],
+            ]).resize()
+          );
+        } else if ("text" in ctx.message) {
+          return handleUpdateField(ctx);
+        }
+      }
+      return next();
     });
 
     // Handle unknown commands
