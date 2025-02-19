@@ -2,7 +2,7 @@
   "name": "telegram-dating-bot",
   "version": "1.0.0",
   "description": "A Telegram dating bot with profile matching",
-  "main": "dist/index.js",
+  "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
