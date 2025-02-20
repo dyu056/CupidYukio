@@ -21,6 +21,7 @@ export async function handleProfileView(ctx: Context) {
       `*Age:* ${user.age || "Not set"}`,
       `*Gender:* ${user.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1) : "Not set"}`,
       "",
+      user.about ? `*About:* _${user.about}_\n` : "",
       "*Interests:*",
       user.interests?.length
         ? user.interests.map((interest) => `• ${interest}`).join("\n")

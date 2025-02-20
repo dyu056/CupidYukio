@@ -83,6 +83,7 @@ export async function handleBrowseMatches(ctx: Context) {
     const profileText = [
       `*${potentialMatch.name}*, ${potentialMatch.age}`,
       "",
+      potentialMatch.about ? `_${potentialMatch.about}_\n\n` : "",
       `*Interests:* ${
         potentialMatch.interests?.length
           ? potentialMatch.interests.join(", ")

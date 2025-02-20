@@ -7,6 +7,7 @@ export interface IUser extends Document {
   username: string;
   gender?: "male" | "female" | "other";
   photoUrl?: string;
+  about?: string;
   interests: string[];
   likes: mongoose.Types.ObjectId[];
   matches: mongoose.Types.ObjectId[];
@@ -21,6 +22,7 @@ const userSchema = new Schema<IUser>(
     name: { type: String, required: true },
     username: { type: String, required: true },
     age: { type: String },
+    about: { type: String },
     gender: { type: String, enum: ["male", "female", "other"] },
     photoUrl: { type: String },
     interests: [{ type: String }],

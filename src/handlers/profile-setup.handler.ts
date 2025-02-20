@@ -17,6 +17,8 @@ export async function handleProfileSetup(ctx: Context) {
       return handleGenderInput(ctx);
     case "interests":
       return handleInterestsInput(ctx);
+    case "about":
+      return handleAboutInput(ctx);
     case "photo":
       return handlePhotoInput(ctx);
     default:
@@ -92,8 +94,9 @@ async function handleGenderInput(ctx: Context) {
     "Perfect! Now, tell me about your interests.\n" +
       "You can enter multiple interests separated by commas.",
     Markup.keyboard([
-      ["Sports", "Music", "Travel"],
-      ["Movies", "Food", "Books"],
+      ["Coffee", "Music", "Beaches"],
+      ["Anime", "Mountains", "Chai"],
+      ["Cafe Hopping", "Writing", "Reading"],
       ["Done ✅"],
     ]).resize()
   );
@@ -111,21 +114,11 @@ async function handleInterestsInput(ctx: Context) {
       );
     }
 
-    try {
-      // Batch update profile with age, gender, and interests
-      await profileService.updateProfile(ctx.from.id, {
-        age: ctx.session.profileSetup.data.age,
-        gender: ctx.session.profileSetup.data.gender,
-        interests: ctx.session.profileSetup.data.interests,
-      });
-    } catch (error) {
-      logger.error("Error updating profile:", error);
-      return await ctx.reply("Sorry, there was an error. Please try again.");
-    }
-
-    ctx.session.profileSetup.step = "photo";
+    ctx.session.profileSetup.step = "about";
     return await ctx.reply(
-      "Great! Finally, send me a photo of yourself.",
+      "Time to add a catchy one-liner! 🌟\n" +
+        "Share your best pickup line, a joke, or anything that makes you unique!\n" +
+        "(Keep it short and sweet - max 150 characters)",
       Markup.removeKeyboard()
     );
   }
@@ -146,6 +139,29 @@ async function handleInterestsInput(ctx: Context) {
   );
 }
 
+async function handleAboutInput(ctx: Context) {
+  if (!ctx.message || !ctx.from) return;
+  ensureProfileSetup(ctx);
+  if (!("text" in ctx.message)) return;
+
+  const about = ctx.message.text.trim();
+
+  // Validate about length
+  // if (about.length > 150) {
+  //   return await ctx.reply(
+  //     "That's a bit too long! Please keep it under 150 characters. Try again!"
+  //   );
+  // }
+
+  ctx.session.profileSetup.data.about = about;
+  ctx.session.profileSetup.step = "photo";
+
+  await ctx.reply(
+    "Great one-liner! 🎯\nNow, send me a photo of yourself.",
+    Markup.removeKeyboard()
+  );
+}
+
 async function handlePhotoInput(ctx: Context) {
   if (!ctx.message || !ctx.from) return;
   ensureProfileSetup(ctx);
@@ -154,12 +170,19 @@ async function handlePhotoInput(ctx: Context) {
   }
 
   try {
-    const photos = ctx.message.photo;
-    // Check if multiple photos are uploaded
-    if (photos.length > 1) {
-      await ctx.reply("Please upload only one photo");
-      return;
+    // Save all profile data including about
+    try {
+      await profileService.updateProfile(ctx.from.id, {
+        age: ctx.session.profileSetup.data.age,
+        gender: ctx.session.profileSetup.data.gender,
+        interests: ctx.session.profileSetup.data.interests,
+        about: ctx.session.profileSetup.data.about,
+      });
+    } catch (error) {
+      logger.error("Error updating profile:", error);
+      return await ctx.reply("Sorry, there was an error. Please try again.");
     }
+
     await handleProfilePhoto(ctx);
     ctx.session.profileSetup.step = "complete";
 

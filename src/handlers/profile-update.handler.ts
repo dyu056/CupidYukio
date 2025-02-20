@@ -11,7 +11,7 @@ export async function handleProfileUpdate(ctx: Context) {
     Markup.keyboard([
       ["Name 📛", "Age ⌛", "Gender ⚧"],
       ["Photo 📸", "Interests 🎯"],
-      ["Cancel ❌"],
+      ["About ✍️", "Cancel ❌"],
     ]).resize()
   );
 }
@@ -62,6 +62,16 @@ export async function handleUpdateField(ctx: Context) {
           Markup.removeKeyboard()
         );
         ctx.session.updateField = "photo";
+        break;
+
+      case "About ✍️":
+        await ctx.reply(
+          "Share your new one-liner! 🌟\n" +
+            "It could be a pickup line, joke, or anything catchy!\n" +
+            "(Keep it under 150 characters)",
+          Markup.removeKeyboard()
+        );
+        ctx.session.updateField = "about";
         break;
 
       case "Cancel ❌":
@@ -156,6 +166,17 @@ async function handleUpdateValue(ctx: Context) {
             `Added: ${interests.join(", ")}\nYou can add more or press 'Done ✅' to save.`
           );
         }
+        break;
+
+      case "about":
+        const about = ctx.message.text.trim();
+        // if (about.length > 150) {
+        //   return await ctx.reply(
+        //     "That's a bit too long! Please keep it under 150 characters. Try again!"
+        //   );
+        // }
+        await profileService.updateProfile(ctx.from.id, { about });
+        delete ctx.session.updateField;
         break;
     }
 

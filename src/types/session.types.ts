@@ -1,17 +1,18 @@
 export interface ProfileSetupState {
-  step: "age" | "gender" | "interests" | "photo" | "complete";
+  step: "age" | "gender" | "interests" | "about" | "photo" | "complete";
   data: {
     age?: string;
     gender?: "male" | "female" | "other";
     interests?: string[];
     photoUrl?: string;
     name?: string;
+    about?: string;
   };
 }
 
 export interface SessionData {
   profileSetup?: ProfileSetupState;
-  updateField?: "name" | "age" | "gender" | "interests" | "photo";
+  updateField?: "name" | "age" | "gender" | "interests" | "photo" | "about";
   newInterests?: string[];
   browsing?: {
     currentMatchId: string;
