@@ -202,7 +202,6 @@ export class TelegramBot {
     await this.bot.telegram.setMyCommands([
       { command: "start", description: "Start the bot" },
       { command: "menu", description: "Show main menu" },
-      { command: "profile", description: "View your profile" },
     ]);
   }
 }
