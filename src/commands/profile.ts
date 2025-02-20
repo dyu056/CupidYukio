@@ -10,7 +10,7 @@ export async function handleProfilePhoto(ctx: Context) {
       return;
     }
 
-    const photo = ctx.message.photo[ctx.message.photo.length - 1];
+    const photo = ctx.message.photo[0];
     const { buffer, mimeType, fileName } = await downloadTelegramFile(
       ctx,
       photo.file_id

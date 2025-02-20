@@ -154,6 +154,12 @@ async function handlePhotoInput(ctx: Context) {
   }
 
   try {
+    const photos = ctx.message.photo;
+    // Check if multiple photos are uploaded
+    if (photos.length > 1) {
+      await ctx.reply("Please upload only one photo");
+      return;
+    }
     await handleProfilePhoto(ctx);
     ctx.session.profileSetup.step = "complete";
 
