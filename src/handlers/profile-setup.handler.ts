@@ -92,7 +92,7 @@ async function handleGenderInput(ctx: Context) {
 
   await ctx.reply(
     "Perfect! Now, tell me about your interests.\n" +
-      "You can enter multiple interests separated by commas.",
+      "You can enter multiple interests(Max 5) separated by commas.",
     Markup.keyboard([
       ["Coffee", "Music", "Beaches"],
       ["Anime", "Mountains", "Chai"],
@@ -131,11 +131,18 @@ async function handleInterestsInput(ctx: Context) {
   const currentInterests = ctx.session.profileSetup.data.interests || [];
   const updatedInterests = [...new Set([...currentInterests, ...interests])];
 
+  if (updatedInterests.length > 5) {
+    return await ctx.reply(
+      "You can only have up to 5 interests. Please remove some before adding more."
+    );
+  }
+
   ctx.session.profileSetup.data.interests = updatedInterests;
 
   await ctx.reply(
     `Added interests: ${interests.join(", ")}\n` +
-      "You can add more interests or press 'Done ✅' to continue."
+      `You have ${updatedInterests.length}/5 interests.\n` +
+      "You can add more or press 'Done ✅' to continue."
   );
 }
 
@@ -157,7 +164,7 @@ async function handleAboutInput(ctx: Context) {
   ctx.session.profileSetup.step = "photo";
 
   await ctx.reply(
-    "Great one-liner! 🎯\nNow, send me a photo of yourself.",
+    "Great one-liner! 🎯\nNow, send me a photo of yourself (Max 1 photo).",
     Markup.removeKeyboard()
   );
 }

@@ -45,10 +45,11 @@ export async function handleUpdateField(ctx: Context) {
 
       case "Interests 🎯":
         await ctx.reply(
-          "Let's update your interests!\nYou can enter multiple interests separated by commas.",
+          "Let's update your interests!\nYou can enter multiple interests(Max 5) separated by commas.",
           Markup.keyboard([
-            ["Sports", "Music", "Travel"],
-            ["Movies", "Food", "Books"],
+            ["Coffee", "Music", "Beaches"],
+            ["Anime", "Mountains", "Chai"],
+            ["Cafe Hopping", "Writing", "Reading"],
             ["Done ✅"],
           ]).resize()
         );
@@ -158,12 +159,24 @@ async function handleUpdateValue(ctx: Context) {
             .split(",")
             .map((i) => i.trim())
             .filter((i) => i.length > 0);
-          ctx.session.newInterests = [
+
+          const updatedInterests = [
             ...(ctx.session.newInterests || []),
             ...interests,
           ];
+
+          // Check if total interests exceed 5
+          if (updatedInterests.length > 5) {
+            return await ctx.reply(
+              "You can only have up to 5 interests. Please remove some before adding more."
+            );
+          }
+
+          ctx.session.newInterests = updatedInterests;
           return await ctx.reply(
-            `Added: ${interests.join(", ")}\nYou can add more or press 'Done ✅' to save.`
+            `Added: ${interests.join(", ")}\n` +
+              `You have ${updatedInterests.length}/5 interests.\n` +
+              "You can add more or press 'Done ✅' to save."
           );
         }
         break;
