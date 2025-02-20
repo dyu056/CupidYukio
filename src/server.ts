@@ -21,7 +21,7 @@ import {
   handleBrowseMatches,
   handleBrowseAction,
 } from "./handlers/browse.handler";
-import { handleViewMatches } from "./handlers/match.handler";
+import { handleViewMatches, handleUnmatch } from "./handlers/match.handler";
 
 export class TelegramBot {
   private bot: Telegraf;
@@ -127,6 +127,12 @@ export class TelegramBot {
         }
       }
       return next();
+    });
+
+    // Handle unmatch callback
+    this.bot.action(/^unmatch:(.+)$/, async (ctx) => {
+      const matchId = ctx.match[1];
+      await handleUnmatch(ctx, matchId);
     });
   }
 
