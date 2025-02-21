@@ -26,12 +26,18 @@ export async function handleUpdateField(ctx: Context) {
   if (!ctx.session.updateField) {
     switch (action) {
       case "Name 📛":
-        await ctx.reply("Please enter your new name:", Markup.removeKeyboard());
+        await ctx.reply(
+          "Please enter your new name:",
+          Markup.keyboard([["Cancel ❌"]]).resize()
+        );
         ctx.session.updateField = "name";
         break;
 
       case "Age ⌛":
-        await ctx.reply("Please enter your new age:", Markup.removeKeyboard());
+        await ctx.reply(
+          "Please enter your new age:",
+          Markup.keyboard([["Cancel ❌"]]).resize()
+        );
         ctx.session.updateField = "age";
         break;
 
@@ -60,7 +66,7 @@ export async function handleUpdateField(ctx: Context) {
       case "Photo 📸":
         await ctx.reply(
           "Please send me your new profile photo.\nOnly photos are accepted, other messages will be ignored.",
-          Markup.removeKeyboard()
+          Markup.keyboard([["Cancel ❌"]]).resize()
         );
         ctx.session.updateField = "photo";
         break;
@@ -70,7 +76,7 @@ export async function handleUpdateField(ctx: Context) {
           "Share your new one-liner! 🌟\n" +
             "It could be a pickup line, joke, or anything catchy!\n" +
             "(Keep it under 150 characters)",
-          Markup.removeKeyboard()
+          Markup.keyboard([["Cancel ❌"]]).resize()
         );
         ctx.session.updateField = "about";
         break;
@@ -103,6 +109,20 @@ async function handleUpdateValue(ctx: Context) {
 
   const field = ctx.session.updateField;
   if (!field) return;
+
+  // Handle cancel action for all fields
+  if (ctx.message.text === "Cancel ❌") {
+    delete ctx.session.updateField;
+    delete ctx.session.newInterests;
+    await ctx.reply(
+      "Update cancelled. Back to profile.",
+      Markup.keyboard([
+        ["My Profile 👤", "Browse Matches 👥"],
+        ["My Matches 💕", "Update Profile ✏️"],
+      ]).resize()
+    );
+    return;
+  }
 
   try {
     switch (field) {
