@@ -1,3 +1,5 @@
+import { IUser } from "../models/user.model";
+
 export interface ProfileSetupState {
   step: "age" | "gender" | "interests" | "about" | "photo" | "complete";
   data: {
@@ -10,16 +12,18 @@ export interface ProfileSetupState {
   };
 }
 
+export interface BrowsingSession {
+  matches: (IUser & { _id: string })[];
+  dailySwipes: number;
+  lastSwipeDate: string;
+  currentMatchId: string;
+}
+
 export interface SessionData {
   profileSetup?: ProfileSetupState;
-  updateField?: "name" | "age" | "gender" | "interests" | "photo" | "about";
+  browsing?: BrowsingSession;
+  updateField?: string;
   newInterests?: string[];
-  browsing?: {
-    currentMatchId: string;
-    matches: string[];
-    dailySwipes: number;
-    lastSwipeDate: string;
-  };
 }
 
 // Extend Telegraf Context to include our session data

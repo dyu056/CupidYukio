@@ -6,19 +6,19 @@ const DAILY_SWIPE_LIMIT = 50;
 const BATCH_SIZE = 20;
 
 export async function handleBrowseMatches(ctx: Context) {
-  try {
-    if (!ctx.from) return;
+  if (!ctx.from) return;
 
-    // Get current user
+  try {
+    // Get current user's profile
     const currentUser = await User.findOne({ telegramId: ctx.from.id });
     if (!currentUser) {
-      return await ctx.reply("Please set up your profile first using /start");
+      return await ctx.reply("Please set up your profile first!");
     }
 
-    // Check daily limit
+    // Initialize browsing session if not exists
     if (!ctx.session.browsing) {
       ctx.session.browsing = {
-        matches: [],
+        matches: [], // Will store batch of potential matches
         dailySwipes: 0,
         lastSwipeDate: new Date().toISOString().split("T")[0],
         currentMatchId: "",
@@ -32,7 +32,7 @@ export async function handleBrowseMatches(ctx: Context) {
       ctx.session.browsing.lastSwipeDate = today;
     }
 
-    // Check if user has reached daily limit
+    // Check daily limit
     if (ctx.session.browsing.dailySwipes >= DAILY_SWIPE_LIMIT) {
       return await ctx.reply(
         "You've reached your daily limit of 50 swipes. Come back tomorrow! ✨",
@@ -47,16 +47,23 @@ export async function handleBrowseMatches(ctx: Context) {
     if (ctx.session.browsing.matches.length === 0) {
       const potentialMatches = await User.find({
         telegramId: { $ne: ctx.from.id },
-        _id: { $nin: currentUser.likes },
+        _id: {
+          $nin: [
+            ...(currentUser.likes || []),
+            ...(currentUser.seenProfiles || []),
+          ],
+        },
         isOnboarded: true,
         gender: currentUser.gender === "male" ? "female" : "male",
       })
         .limit(BATCH_SIZE)
-        .select("_id");
+        .select("name age about interests photoUrl _id telegramId")
+        .lean()
+        .exec();
 
       if (potentialMatches.length === 0) {
         return await ctx.reply(
-          "No more matches available right now. Check back later! ✨",
+          "🔍 No more profiles to show right now!\nCheck back later for new matches.",
           Markup.keyboard([
             ["My Profile 👤", "My Matches 💕"],
             ["Update Profile ✏️"],
@@ -64,26 +71,17 @@ export async function handleBrowseMatches(ctx: Context) {
         );
       }
 
-      ctx.session.browsing.matches = potentialMatches.map(
-        (match) => match._id?.toString() ?? ""
-      );
+      ctx.session.browsing.matches = potentialMatches as any;
     }
 
     // Get next match from the session
-    const nextMatchId = ctx.session.browsing.matches[0];
-    const potentialMatch = await User.findById(nextMatchId);
-
-    if (!potentialMatch) {
-      // Remove invalid match and try again
-      ctx.session.browsing.matches.shift();
-      return handleBrowseMatches(ctx);
-    }
+    const potentialMatch = ctx.session.browsing.matches[0];
 
     // Create profile card
     const profileText = [
       `*${potentialMatch.name}*, ${potentialMatch.age}`,
       "",
-      potentialMatch.about ? `_${potentialMatch.about}_\n\n` : "",
+      potentialMatch.about ? `_${potentialMatch.about}_\n` : "",
       `*Interests:* ${
         potentialMatch.interests?.length
           ? potentialMatch.interests.join(", ")
@@ -113,11 +111,11 @@ export async function handleBrowseMatches(ctx: Context) {
       });
     }
 
-    // Update session
-    ctx.session.browsing.currentMatchId = nextMatchId;
+    // Update session with current match
+    ctx.session.browsing.currentMatchId = potentialMatch._id;
   } catch (error) {
     logger.error("Error in browse matches:", error);
-    await ctx.reply("Sorry, there was an error. Please try again.");
+    await ctx.reply("Sorry, something went wrong. Please try again later.");
   }
 }
 
@@ -133,6 +131,16 @@ export async function handleBrowseAction(ctx: Context) {
     switch (action) {
       case "👍 Like":
       case "👎 Skip":
+        // Add to seen profiles
+        await User.findOneAndUpdate(
+          { telegramId: ctx.from.id },
+          {
+            $addToSet: {
+              seenProfiles: ctx.session.browsing.currentMatchId,
+            },
+          }
+        );
+
         // Increment swipe counter
         ctx.session.browsing.dailySwipes++;
 
@@ -147,13 +155,12 @@ export async function handleBrowseAction(ctx: Context) {
           const likedUser = await User.findById(
             ctx.session.browsing.currentMatchId
           ).populate("likes", "telegramId");
+
           if (
             likedUser?.likes.some(
               (like) => (like as any).telegramId === ctx.from?.id
             )
           ) {
-            // Get current user's MongoDB document
-            // const currentUser = await User.findOne({ telegramId: ctx.from.id });
             if (!currentUser) return;
 
             // Add users to each other's matches
@@ -166,21 +173,37 @@ export async function handleBrowseAction(ctx: Context) {
               }),
             ]);
 
-            await ctx.reply(
+            // Remove current match from session
+            ctx.session.browsing.matches.shift();
+
+            return await ctx.reply(
               "It's a match! 🎉\nYou can find them in your matches.",
               Markup.keyboard([
                 ["My Matches 💕", "Continue Browsing 👥"],
                 ["Stop Browsing 🔚"],
               ]).resize()
             );
-            // Remove current match from session
-            ctx.session.browsing.matches.shift();
-            return;
           }
         }
 
         // Remove current match from session
         ctx.session.browsing.matches.shift();
+
+        // Check if current batch is finished
+        if (ctx.session.browsing.matches.length === 0) {
+          return await ctx.reply(
+            "You've seen all profiles in this batch! Want to see more?",
+            Markup.keyboard([
+              ["Browse More 🔄", "My Matches 💕"],
+              ["Stop Browsing 🔚"],
+            ]).resize()
+          );
+        }
+        break;
+
+      case "Browse More 🔄":
+        // Reset matches array to trigger new batch fetch
+        ctx.session.browsing.matches = [];
         break;
 
       case "Stop Browsing 🔚":

@@ -14,6 +14,7 @@ export interface IUser extends Document {
   isOnboarded: boolean;
   createdAt: Date;
   updatedAt: Date;
+  seenProfiles: string[];
 }
 
 const userSchema = new Schema<IUser>(
@@ -34,6 +35,7 @@ const userSchema = new Schema<IUser>(
       },
     ],
     isOnboarded: { type: Boolean, default: false },
+    seenProfiles: [{ type: Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );
