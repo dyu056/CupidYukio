@@ -182,12 +182,8 @@ async function handleUpdateValue(ctx: Context) {
         break;
 
       case "about":
+        console.log("About update");
         const about = ctx.message.text.trim();
-        // if (about.length > 150) {
-        //   return await ctx.reply(
-        //     "That's a bit too long! Please keep it under 150 characters. Try again!"
-        //   );
-        // }
         await profileService.updateProfile(ctx.from.id, { about });
         delete ctx.session.updateField;
         break;

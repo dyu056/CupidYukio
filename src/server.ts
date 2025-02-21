@@ -104,6 +104,7 @@ export class TelegramBot {
         "Gender ⚧",
         "Photo 📸",
         "Interests 🎯",
+        "About ✍️",
         "Cancel ❌",
       ],
       handleUpdateField
