@@ -44,7 +44,18 @@ export async function handleBrowseMatches(ctx: Context) {
     }
 
     // If no matches in session or all matches viewed, fetch new batch
-    if (ctx.session.browsing.matches.length === 0) {
+    const matches = ctx.session.browsing.matches;
+
+    // Reset matches if it's an array of strings (old format)
+    if (
+      Array.isArray(matches) &&
+      matches.length > 0 &&
+      typeof matches[0] === "string"
+    ) {
+      ctx.session.browsing.matches = [];
+    }
+
+    if (matches.length === 0) {
       const potentialMatches = await User.find({
         telegramId: { $ne: ctx.from.id },
         _id: {
