@@ -1,6 +1,30 @@
 import { Context, Markup } from "telegraf";
 import { profileService } from "../services/profile.service";
 import { logger } from "../utils/logger";
+import { User } from "../models/user.model";
+
+enum UPDATE_ACTIONS {
+  "Name 📛" = "name_69",
+  "Age ⌛" = "age_69",
+  "Gender ⚧" = "gender_69",
+  "Interests 🎯" = "interests_69",
+  "Photo 📸" = "photo_69",
+  "About ✍️" = "about_69",
+  "Cancel ❌" = "cancel_69",
+  "name_69" = "Name 📛",
+  "age_69" = "Age ⌛",
+  "gender_69" = "Gender ⚧",
+  "interests_69" = "Interests 🎯",
+  "photo_69" = "Photo 📸",
+  "about_69" = "About ✍️",
+  "cancel_69" = "Cancel ❌",
+}
+
+const UPDATE_ACTIONS_KEYBOARD = [
+  ["Name 📛", "Age ⌛", "Gender ⚧"],
+  ["Photo 📸", "Interests 🎯"],
+  ["About ✍️", "Cancel ❌"],
+];
 
 export async function handleProfileUpdate(ctx: Context) {
   if (!ctx.from) return;
@@ -8,11 +32,7 @@ export async function handleProfileUpdate(ctx: Context) {
   // Show update options menu
   await ctx.reply(
     "What would you like to update?",
-    Markup.keyboard([
-      ["Name 📛", "Age ⌛", "Gender ⚧"],
-      ["Photo 📸", "Interests 🎯"],
-      ["About ✍️", "Cancel ❌"],
-    ]).resize()
+    Markup.keyboard(UPDATE_ACTIONS_KEYBOARD).resize()
   );
 }
 
@@ -21,11 +41,15 @@ export async function handleUpdateField(ctx: Context) {
   if (!ctx.session) ctx.session = {};
 
   const action = ctx.message.text;
+  const actionEnum = UPDATE_ACTIONS[action as keyof typeof UPDATE_ACTIONS];
+  if (actionEnum) {
+    delete ctx.session.updateField;
+  }
 
   // Handle update field selection
   if (!ctx.session.updateField) {
     switch (action) {
-      case "Name 📛":
+      case UPDATE_ACTIONS.name_69:
         await ctx.reply(
           "Please enter your new name:",
           Markup.keyboard([["Cancel ❌"]]).resize()
@@ -33,7 +57,7 @@ export async function handleUpdateField(ctx: Context) {
         ctx.session.updateField = "name";
         break;
 
-      case "Age ⌛":
+      case UPDATE_ACTIONS.age_69:
         await ctx.reply(
           "Please enter your new age:",
           Markup.keyboard([["Cancel ❌"]]).resize()
@@ -41,7 +65,7 @@ export async function handleUpdateField(ctx: Context) {
         ctx.session.updateField = "age";
         break;
 
-      case "Gender ⚧":
+      case UPDATE_ACTIONS.gender_69:
         await ctx.reply(
           "Please select your gender:",
           Markup.keyboard([["Male 👨", "Female 👩"], ["Other 🌈"]]).resize()
@@ -49,7 +73,7 @@ export async function handleUpdateField(ctx: Context) {
         ctx.session.updateField = "gender";
         break;
 
-      case "Interests 🎯":
+      case UPDATE_ACTIONS.interests_69:
         await ctx.reply(
           "Let's update your interests!\nYou can enter multiple interests(Max 5) separated by commas.",
           Markup.keyboard([
@@ -60,10 +84,9 @@ export async function handleUpdateField(ctx: Context) {
           ]).resize()
         );
         ctx.session.updateField = "interests";
-        ctx.session.newInterests = [];
         break;
 
-      case "Photo 📸":
+      case UPDATE_ACTIONS.photo_69:
         await ctx.reply(
           "Please send me your new profile photo.\nOnly photos are accepted, other messages will be ignored.",
           Markup.keyboard([["Cancel ❌"]]).resize()
@@ -71,7 +94,7 @@ export async function handleUpdateField(ctx: Context) {
         ctx.session.updateField = "photo";
         break;
 
-      case "About ✍️":
+      case UPDATE_ACTIONS.about_69:
         await ctx.reply(
           "Share your new one-liner! 🌟\n" +
             "It could be a pickup line, joke, or anything catchy!\n" +
@@ -81,9 +104,8 @@ export async function handleUpdateField(ctx: Context) {
         ctx.session.updateField = "about";
         break;
 
-      case "Cancel ❌":
+      case UPDATE_ACTIONS.cancel_69:
         delete ctx.session.updateField;
-        delete ctx.session.newInterests;
         await ctx.reply(
           "Update cancelled. Back to profile.",
           Markup.keyboard([
@@ -113,7 +135,6 @@ async function handleUpdateValue(ctx: Context) {
   // Handle cancel action for all fields
   if (ctx.message.text === "Cancel ❌") {
     delete ctx.session.updateField;
-    delete ctx.session.newInterests;
     await ctx.reply(
       "Update cancelled. Back to profile.",
       Markup.keyboard([
@@ -125,6 +146,12 @@ async function handleUpdateValue(ctx: Context) {
   }
 
   try {
+    // Get current user data from DB
+    const currentUser = await User.findOne({ telegramId: ctx.from.id });
+    if (!currentUser) {
+      throw new Error("User not found");
+    }
+
     switch (field) {
       case "name":
         const name = ctx.message.text.trim();
@@ -166,23 +193,27 @@ async function handleUpdateValue(ctx: Context) {
 
       case "interests":
         if (ctx.message.text === "Done ✅") {
-          if (!ctx.session.newInterests?.length) {
+          // Get current user with interests
+          const user = await User.findOne({ telegramId: ctx.from.id });
+          if (!user?.interests?.length) {
             return await ctx.reply("Please add at least one interest.");
           }
-          await profileService.updateProfile(ctx.from.id, {
-            interests: ctx.session.newInterests,
-          });
           delete ctx.session.updateField;
-          delete ctx.session.newInterests;
+          break;
         } else {
-          const interests = ctx.message.text
+          // Parse new interests from message
+          const newInterests = ctx.message.text
             .split(",")
             .map((i) => i.trim())
             .filter((i) => i.length > 0);
 
+          // Get current interests from database
+          const user = await User.findOne({ telegramId: ctx.from.id });
+          const currentInterests = user?.interests || [];
+
+          // Combine and deduplicate interests
           const updatedInterests = [
-            ...(ctx.session.newInterests || []),
-            ...interests,
+            ...new Set([...currentInterests, ...newInterests]),
           ];
 
           // Check if total interests exceed 5
@@ -192,9 +223,13 @@ async function handleUpdateValue(ctx: Context) {
             );
           }
 
-          ctx.session.newInterests = updatedInterests;
+          // Update interests directly in database
+          await profileService.updateProfile(ctx.from.id, {
+            interests: updatedInterests,
+          });
+
           return await ctx.reply(
-            `Added: ${interests.join(", ")}\n` +
+            `Added: ${newInterests.join(", ")}\n` +
               `You have ${updatedInterests.length}/5 interests.\n` +
               "You can add more or press 'Done ✅' to save."
           );
@@ -202,7 +237,6 @@ async function handleUpdateValue(ctx: Context) {
         break;
 
       case "about":
-        console.log("About update");
         const about = ctx.message.text.trim();
         await profileService.updateProfile(ctx.from.id, { about });
         delete ctx.session.updateField;
