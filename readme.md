@@ -2,6 +2,13 @@
 
 A Telegram bot that helps users find and match with potential partners.
 
+# How to run
+
+1. Clone the repository
+2. Install dependencies `npm install`
+3. Create a `.env` file based on `.env.example`
+4. Start the bot `npm run dev`
+
 ## Features
 
 - 👤 Profile Management
