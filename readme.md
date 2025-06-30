@@ -44,3 +44,8 @@ A Telegram bot that helps users find and match with potential partners.
 - `/menu` - Show main menu
 
 ## License
+
+
+## 2025.6.30
+开机自启部署
+将数据库设定为了www.love.fun上的mongodb，未在/root/DateMate/.env中配置R2服务，只维持了基础的运行。
