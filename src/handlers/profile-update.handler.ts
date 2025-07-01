@@ -7,23 +7,18 @@ enum UPDATE_ACTIONS {
   "Name 📛" = "name_69",
   "Age ⌛" = "age_69",
   "Gender ⚧" = "gender_69",
-  "Interests 🎯" = "interests_69",
   "Photo 📸" = "photo_69",
-  "About ✍️" = "about_69",
   "Cancel ❌" = "cancel_69",
   "name_69" = "Name 📛",
   "age_69" = "Age ⌛",
   "gender_69" = "Gender ⚧",
-  "interests_69" = "Interests 🎯",
   "photo_69" = "Photo 📸",
-  "about_69" = "About ✍️",
   "cancel_69" = "Cancel ❌",
 }
 
 const UPDATE_ACTIONS_KEYBOARD = [
   ["Name 📛", "Age ⌛", "Gender ⚧"],
-  ["Photo 📸", "Interests 🎯"],
-  ["About ✍️", "Cancel ❌"],
+  ["Photo 📸", "Cancel ❌"],
 ];
 
 export async function handleProfileUpdate(ctx: Context) {
@@ -73,35 +68,12 @@ export async function handleUpdateField(ctx: Context) {
         ctx.session.updateField = "gender";
         break;
 
-      case UPDATE_ACTIONS.interests_69:
-        await ctx.reply(
-          "Let's update your interests!\nYou can enter multiple interests(Max 5) separated by commas.",
-          Markup.keyboard([
-            ["Coffee", "Music", "Beaches"],
-            ["Anime", "Mountains", "Chai"],
-            ["Cafe Hopping", "Writing", "Reading"],
-            ["Done ✅"],
-          ]).resize()
-        );
-        ctx.session.updateField = "interests";
-        break;
-
       case UPDATE_ACTIONS.photo_69:
         await ctx.reply(
           "Please send me your new profile photo.\nOnly photos are accepted, other messages will be ignored.",
           Markup.keyboard([["Cancel ❌"]]).resize()
         );
         ctx.session.updateField = "photo";
-        break;
-
-      case UPDATE_ACTIONS.about_69:
-        await ctx.reply(
-          "Share your new one-liner! 🌟\n" +
-            "It could be a pickup line, joke, or anything catchy!\n" +
-            "(Keep it under 150 characters)",
-          Markup.keyboard([["Cancel ❌"]]).resize()
-        );
-        ctx.session.updateField = "about";
         break;
 
       case UPDATE_ACTIONS.cancel_69:
@@ -188,57 +160,6 @@ async function handleUpdateValue(ctx: Context) {
         await profileService.updateProfile(ctx.from.id, {
           gender: genderInput,
         });
-        delete ctx.session.updateField;
-        break;
-
-      case "interests":
-        if (ctx.message.text === "Done ✅") {
-          // Get current user with interests
-          const user = await User.findOne({ telegramId: ctx.from.id });
-          if (!user?.interests?.length) {
-            return await ctx.reply("Please add at least one interest.");
-          }
-          delete ctx.session.updateField;
-          break;
-        } else {
-          // Parse new interests from message
-          const newInterests = ctx.message.text
-            .split(",")
-            .map((i) => i.trim())
-            .filter((i) => i.length > 0);
-
-          // Get current interests from database
-          const user = await User.findOne({ telegramId: ctx.from.id });
-          const currentInterests = user?.interests || [];
-
-          // Combine and deduplicate interests
-          const updatedInterests = [
-            ...new Set([...currentInterests, ...newInterests]),
-          ];
-
-          // Check if total interests exceed 5
-          if (updatedInterests.length > 5) {
-            return await ctx.reply(
-              "You can only have up to 5 interests. Please remove some before adding more."
-            );
-          }
-
-          // Update interests directly in database
-          await profileService.updateProfile(ctx.from.id, {
-            interests: updatedInterests,
-          });
-
-          return await ctx.reply(
-            `Added: ${newInterests.join(", ")}\n` +
-              `You have ${updatedInterests.length}/5 interests.\n` +
-              "You can add more or press 'Done ✅' to save."
-          );
-        }
-        break;
-
-      case "about":
-        const about = ctx.message.text.trim();
-        await profileService.updateProfile(ctx.from.id, { about });
         delete ctx.session.updateField;
         break;
     }

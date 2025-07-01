@@ -18,10 +18,6 @@ export async function handleProfileSetup(ctx: Context) {
       return handleGenderInput(ctx);
     case "questions":
       return handleQuestionSelection(ctx);
-    case "interests":
-      return handleInterestsInput(ctx);
-    case "about":
-      return handleAboutInput(ctx);
     case "photo":
       return handlePhotoInput(ctx);
     default:
@@ -97,73 +93,6 @@ async function handleGenderInput(ctx: Context) {
   return await startQuestionSelection(ctx);
 }
 
-async function handleInterestsInput(ctx: Context) {
-  if (!ctx.message || !ctx.from) return;
-  ensureProfileSetup(ctx);
-  if (!("text" in ctx.message)) return;
-
-  if (ctx.message.text === "Done ✅") {
-    if (!ctx.session.profileSetup.data.interests?.length) {
-      return await ctx.reply(
-        "Please add at least one interest before proceeding."
-      );
-    }
-
-    ctx.session.profileSetup.step = "about";
-    return await ctx.reply(
-      "Time to add a catchy one-liner! 🌟\n" +
-        "Share your best pickup line, a joke, or anything that makes you unique!\n" +
-        "(Keep it short and sweet - max 150 characters)",
-      Markup.removeKeyboard()
-    );
-  }
-
-  const interests = ctx.message.text
-    .split(",")
-    .map((interest) => interest.trim())
-    .filter((interest) => interest.length > 0);
-
-  const currentInterests = ctx.session.profileSetup.data.interests || [];
-  const updatedInterests = [...new Set([...currentInterests, ...interests])];
-
-  if (updatedInterests.length > 5) {
-    return await ctx.reply(
-      "You can only have up to 5 interests. Please remove some before adding more."
-    );
-  }
-
-  ctx.session.profileSetup.data.interests = updatedInterests;
-
-  await ctx.reply(
-    `Added interests: ${interests.join(", ")}\n` +
-      `You have ${updatedInterests.length}/5 interests.\n` +
-      "You can add more or press 'Done ✅' to continue."
-  );
-}
-
-async function handleAboutInput(ctx: Context) {
-  if (!ctx.message || !ctx.from) return;
-  ensureProfileSetup(ctx);
-  if (!("text" in ctx.message)) return;
-
-  const about = ctx.message.text.trim();
-
-  // Validate about length
-  // if (about.length > 150) {
-  //   return await ctx.reply(
-  //     "That's a bit too long! Please keep it under 150 characters. Try again!"
-  //   );
-  // }
-
-  ctx.session.profileSetup.data.about = about;
-  ctx.session.profileSetup.step = "photo";
-
-  await ctx.reply(
-    "Great one-liner! 🎯\nNow, send me a photo of yourself (Max 1 photo).",
-    Markup.removeKeyboard()
-  );
-}
-
 async function handlePhotoInput(ctx: Context) {
   if (!ctx.message || !ctx.from) return;
   ensureProfileSetup(ctx);
@@ -172,14 +101,12 @@ async function handlePhotoInput(ctx: Context) {
   }
 
   try {
-    // Save all profile data including about and questions
+    // Save all profile data
     try {
       await profileService.updateProfile(ctx.from.id, {
         age: ctx.session.profileSetup.data.age,
         gender: ctx.session.profileSetup.data.gender,
         questions: ctx.session.profileSetup.data.questions,
-        interests: ctx.session.profileSetup.data.interests,
-        about: ctx.session.profileSetup.data.about,
       });
     } catch (error) {
       logger.error("Error updating profile:", error);

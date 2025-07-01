@@ -1,15 +1,13 @@
 import { IUser } from "../models/user.model";
 
 export interface ProfileSetupState {
-  step: "age" | "gender" | "questions" | "interests" | "about" | "photo" | "complete";
+  step: "age" | "gender" | "questions" | "photo" | "complete";
   data: {
     age?: string;
     gender?: "male" | "female" | "other";
     questions?: string[];
-    interests?: string[];
     photoUrl?: string;
     name?: string;
-    about?: string;
   };
 }
 

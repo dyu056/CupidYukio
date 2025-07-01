@@ -9,7 +9,7 @@ export async function handleViewMatches(ctx: Context) {
 
     const user = await User.findOne({ telegramId: ctx.from.id }).populate({
       path: "matches",
-      select: "name age photoUrl telegramId username interests questions",
+      select: "name age photoUrl telegramId username questions",
     });
 
     if (!user?.matches.length) {
@@ -42,11 +42,6 @@ export async function handleViewMatches(ctx: Context) {
           questionTexts.length
             ? questionTexts.join(", ")
             : "No questions selected"
-        }`,
-        `*Interests:* ${
-          match.interests?.length
-            ? match.interests.join(", ")
-            : "No interests added"
         }`,
         "",
         `[Send Message 💌](https://t.me/${match.username})`,

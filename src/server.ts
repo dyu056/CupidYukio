@@ -103,8 +103,6 @@ export class TelegramBot {
         "Age ⌛",
         "Gender ⚧",
         "Photo 📸",
-        "Interests 🎯",
-        "About ✍️",
         "Cancel ❌",
       ],
       handleUpdateField

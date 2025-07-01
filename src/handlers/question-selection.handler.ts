@@ -95,20 +95,14 @@ export async function handleQuestionSelection(ctx: Context) {
       };
     }
     ctx.session.profileSetup.data.questions = selectedQuestions;
-    ctx.session.profileSetup.step = "interests";
+    ctx.session.profileSetup.step = "photo";
     if (ctx.session.questionSelection) {
       delete ctx.session.questionSelection;
     }
 
     return await ctx.reply(
-      "Great! Now, tell me about your interests.\n" +
-        "You can enter multiple interests(Max 5) separated by commas.",
-      Markup.keyboard([
-        ["Coffee", "Music", "Beaches"],
-        ["Anime", "Mountains", "Chai"],
-        ["Cafe Hopping", "Writing", "Reading"],
-        ["Done ✅"],
-      ]).resize()
+      "Great! Now, send me a photo of yourself (Max 1 photo).",
+      Markup.removeKeyboard()
     );
   }
 

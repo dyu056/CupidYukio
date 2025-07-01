@@ -28,16 +28,10 @@ export async function handleProfileView(ctx: Context) {
       `*Age:* ${user.age || "Not set"}`,
       `*Gender:* ${user.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1) : "Not set"}`,
       "",
-      user.about ? `*About:* _${user.about}_\n` : "",
       "*Selected Questions:*",
       questionTexts.length
         ? questionTexts.map((text, index) => `• ${text}`).join("\n")
         : "No questions selected",
-      "",
-      "*Interests:*",
-      user.interests?.length
-        ? user.interests.map((interest) => `• ${interest}`).join("\n")
-        : "No interests added",
     ].join("\n");
 
     // If user has a photo, send it with the profile text

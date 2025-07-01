@@ -4,22 +4,23 @@ import { logger } from "../utils/logger";
 import { questions } from "../data/questions";
 
 const DAILY_SWIPE_LIMIT = 50;
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 10;
 
 export async function handleBrowseMatches(ctx: Context) {
-  if (!ctx.from) return;
-
   try {
-    // Get current user's profile
+    if (!ctx.from) return;
+
     const currentUser = await User.findOne({ telegramId: ctx.from.id });
     if (!currentUser) {
-      return await ctx.reply("Please set up your profile first!");
+      return await ctx.reply(
+        "Profile not found. Please use /start to create your profile."
+      );
     }
 
     // Initialize browsing session if not exists
     if (!ctx.session.browsing) {
       ctx.session.browsing = {
-        matches: [], // Will store batch of potential matches
+        matches: [],
         dailySwipes: 0,
         lastSwipeDate: new Date().toISOString().split("T")[0],
         currentMatchId: "",
@@ -69,7 +70,7 @@ export async function handleBrowseMatches(ctx: Context) {
         gender: currentUser.gender === "male" ? "female" : "male",
       })
         .limit(BATCH_SIZE)
-        .select("name age about interests questions photoUrl _id telegramId")
+        .select("name age questions photoUrl _id telegramId")
         .lean()
         .exec();
 
@@ -90,7 +91,7 @@ export async function handleBrowseMatches(ctx: Context) {
     const potentialMatch = ctx.session.browsing.matches[0];
 
     // Get question texts from question IDs
-    const questionTexts = potentialMatch.questions?.map(questionId => {
+    const questionTexts = potentialMatch.questions?.map((questionId: string) => {
       const question = questions.find(q => q.id === questionId);
       return question ? question.text.substring(0, 50) + (question.text.length > 50 ? '...' : '') : questionId;
     }) || [];
@@ -99,16 +100,10 @@ export async function handleBrowseMatches(ctx: Context) {
     const profileText = [
       `*${potentialMatch.name}*, ${potentialMatch.age}`,
       "",
-      potentialMatch.about ? `_${potentialMatch.about}_\n` : "",
       `*Selected Questions:* ${
         questionTexts.length
           ? questionTexts.join(", ")
           : "No questions selected"
-      }`,
-      `*Interests:* ${
-        potentialMatch.interests?.length
-          ? potentialMatch.interests.join(", ")
-          : "No interests added"
       }`,
       "",
       `Swipes today: ${ctx.session.browsing.dailySwipes}/${DAILY_SWIPE_LIMIT}`,
