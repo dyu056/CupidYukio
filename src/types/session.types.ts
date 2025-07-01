@@ -1,15 +1,23 @@
 import { IUser } from "../models/user.model";
 
 export interface ProfileSetupState {
-  step: "age" | "gender" | "interests" | "about" | "photo" | "complete";
+  step: "age" | "gender" | "questions" | "interests" | "about" | "photo" | "complete";
   data: {
     age?: string;
     gender?: "male" | "female" | "other";
+    questions?: string[];
     interests?: string[];
     photoUrl?: string;
     name?: string;
     about?: string;
   };
+}
+
+export interface QuestionSelectionState {
+  currentCategoryIndex: number;
+  selectedQuestions: string[];
+  currentPage: number;
+  questionsPerPage: number;
 }
 
 export interface BrowsingSession {
@@ -21,6 +29,7 @@ export interface BrowsingSession {
 
 export interface SessionData {
   profileSetup?: ProfileSetupState;
+  questionSelection?: QuestionSelectionState;
   browsing?: BrowsingSession;
   updateField?: string;
   newInterests?: string[];

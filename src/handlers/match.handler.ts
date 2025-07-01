@@ -1,6 +1,7 @@
 import { Context, Markup } from "telegraf";
 import { User } from "../models/user.model";
 import { logger } from "../utils/logger";
+import { questions } from "../data/questions";
 
 export async function handleViewMatches(ctx: Context) {
   try {
@@ -8,7 +9,7 @@ export async function handleViewMatches(ctx: Context) {
 
     const user = await User.findOne({ telegramId: ctx.from.id }).populate({
       path: "matches",
-      select: "name age photoUrl telegramId username interests",
+      select: "name age photoUrl telegramId username interests questions",
     });
 
     if (!user?.matches.length) {
@@ -28,9 +29,20 @@ export async function handleViewMatches(ctx: Context) {
       const matchedUser = match?.telegramId !== ctx.from?.id;
       if (!matchedUser) continue;
 
+      // Get question texts from question IDs
+      const questionTexts = match.questions?.map((questionId: string) => {
+        const question = questions.find(q => q.id === questionId);
+        return question ? question.text.substring(0, 50) + (question.text.length > 50 ? '...' : '') : questionId;
+      }) || [];
+
       const matchText = [
         `*${match.name}*, ${match.age}`,
         "",
+        `*Selected Questions:* ${
+          questionTexts.length
+            ? questionTexts.join(", ")
+            : "No questions selected"
+        }`,
         `*Interests:* ${
           match.interests?.length
             ? match.interests.join(", ")

@@ -3,6 +3,7 @@ import { profileService } from "../services/profile.service";
 import { logger } from "../utils/logger";
 import { ProfileSetupState } from "../types/session.types";
 import { handleProfilePhoto } from "../commands/profile";
+import { handleQuestionSelection, startQuestionSelection } from "./question-selection.handler";
 
 export async function handleProfileSetup(ctx: Context) {
   if (!ctx.message || !ctx.from) return;
@@ -15,6 +16,8 @@ export async function handleProfileSetup(ctx: Context) {
       return handleAgeInput(ctx);
     case "gender":
       return handleGenderInput(ctx);
+    case "questions":
+      return handleQuestionSelection(ctx);
     case "interests":
       return handleInterestsInput(ctx);
     case "about":
@@ -87,19 +90,11 @@ async function handleGenderInput(ctx: Context) {
     );
   }
 
-  ctx.session.profileSetup.step = "interests";
+  ctx.session.profileSetup.step = "questions";
   ctx.session.profileSetup.data.gender = genderInput;
 
-  await ctx.reply(
-    "Perfect! Now, tell me about your interests.\n" +
-      "You can enter multiple interests(Max 5) separated by commas.",
-    Markup.keyboard([
-      ["Coffee", "Music", "Beaches"],
-      ["Anime", "Mountains", "Chai"],
-      ["Cafe Hopping", "Writing", "Reading"],
-      ["Done ✅"],
-    ]).resize()
-  );
+  // Start question selection
+  return await startQuestionSelection(ctx);
 }
 
 async function handleInterestsInput(ctx: Context) {
@@ -177,11 +172,12 @@ async function handlePhotoInput(ctx: Context) {
   }
 
   try {
-    // Save all profile data including about
+    // Save all profile data including about and questions
     try {
       await profileService.updateProfile(ctx.from.id, {
         age: ctx.session.profileSetup.data.age,
         gender: ctx.session.profileSetup.data.gender,
+        questions: ctx.session.profileSetup.data.questions,
         interests: ctx.session.profileSetup.data.interests,
         about: ctx.session.profileSetup.data.about,
       });

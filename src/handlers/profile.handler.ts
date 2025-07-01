@@ -1,6 +1,7 @@
 import { Context, Markup } from "telegraf";
 import { User } from "../models/user.model";
 import { logger } from "../utils/logger";
+import { questions } from "../data/questions";
 
 export async function handleProfileView(ctx: Context) {
   if (!ctx.from) return;
@@ -13,6 +14,12 @@ export async function handleProfileView(ctx: Context) {
       );
     }
 
+    // Get question texts from question IDs
+    const questionTexts = user.questions?.map(questionId => {
+      const question = questions.find(q => q.id === questionId);
+      return question ? question.text.substring(0, 50) + (question.text.length > 50 ? '...' : '') : questionId;
+    }) || [];
+
     // Create profile card message
     const profileText = [
       "👤 *Your Profile*",
@@ -22,6 +29,11 @@ export async function handleProfileView(ctx: Context) {
       `*Gender:* ${user.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1) : "Not set"}`,
       "",
       user.about ? `*About:* _${user.about}_\n` : "",
+      "*Selected Questions:*",
+      questionTexts.length
+        ? questionTexts.map((text, index) => `• ${text}`).join("\n")
+        : "No questions selected",
+      "",
       "*Interests:*",
       user.interests?.length
         ? user.interests.map((interest) => `• ${interest}`).join("\n")

@@ -1,6 +1,7 @@
 import { Context, Markup } from "telegraf";
 import { User } from "../models/user.model";
 import { logger } from "../utils/logger";
+import { questions } from "../data/questions";
 
 const DAILY_SWIPE_LIMIT = 50;
 const BATCH_SIZE = 20;
@@ -68,7 +69,7 @@ export async function handleBrowseMatches(ctx: Context) {
         gender: currentUser.gender === "male" ? "female" : "male",
       })
         .limit(BATCH_SIZE)
-        .select("name age about interests photoUrl _id telegramId")
+        .select("name age about interests questions photoUrl _id telegramId")
         .lean()
         .exec();
 
@@ -88,11 +89,22 @@ export async function handleBrowseMatches(ctx: Context) {
     // Get next match from the session
     const potentialMatch = ctx.session.browsing.matches[0];
 
+    // Get question texts from question IDs
+    const questionTexts = potentialMatch.questions?.map(questionId => {
+      const question = questions.find(q => q.id === questionId);
+      return question ? question.text.substring(0, 50) + (question.text.length > 50 ? '...' : '') : questionId;
+    }) || [];
+
     // Create profile card
     const profileText = [
       `*${potentialMatch.name}*, ${potentialMatch.age}`,
       "",
       potentialMatch.about ? `_${potentialMatch.about}_\n` : "",
+      `*Selected Questions:* ${
+        questionTexts.length
+          ? questionTexts.join(", ")
+          : "No questions selected"
+      }`,
       `*Interests:* ${
         potentialMatch.interests?.length
           ? potentialMatch.interests.join(", ")
