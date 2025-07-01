@@ -31,6 +31,7 @@ export interface SessionData {
   browsing?: BrowsingSession;
   updateField?: string;
   newInterests?: string[];
+  isUpdateMode?: boolean;
 }
 
 // Extend Telegraf Context to include our session data

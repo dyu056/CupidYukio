@@ -2,23 +2,27 @@ import { Context, Markup } from "telegraf";
 import { profileService } from "../services/profile.service";
 import { logger } from "../utils/logger";
 import { User } from "../models/user.model";
+import { startQuestionSelectionForUpdate } from "./question-selection.handler";
 
 enum UPDATE_ACTIONS {
   "Name 📛" = "name_69",
   "Age ⌛" = "age_69",
   "Gender ⚧" = "gender_69",
+  "Questions ❓" = "questions_69",
   "Photo 📸" = "photo_69",
   "Cancel ❌" = "cancel_69",
   "name_69" = "Name 📛",
   "age_69" = "Age ⌛",
   "gender_69" = "Gender ⚧",
+  "questions_69" = "Questions ❓",
   "photo_69" = "Photo 📸",
   "cancel_69" = "Cancel ❌",
 }
 
 const UPDATE_ACTIONS_KEYBOARD = [
   ["Name 📛", "Age ⌛", "Gender ⚧"],
-  ["Photo 📸", "Cancel ❌"],
+  ["Questions ❓", "Photo 📸"],
+  ["Cancel ❌"],
 ];
 
 export async function handleProfileUpdate(ctx: Context) {
@@ -66,6 +70,11 @@ export async function handleUpdateField(ctx: Context) {
           Markup.keyboard([["Male 👨", "Female 👩"], ["Other 🌈"]]).resize()
         );
         ctx.session.updateField = "gender";
+        break;
+
+      case UPDATE_ACTIONS.questions_69:
+        // Start question selection for profile update
+        await startQuestionSelectionForUpdate(ctx);
         break;
 
       case UPDATE_ACTIONS.photo_69:

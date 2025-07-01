@@ -12,6 +12,7 @@ import {
   handleProfileUpdate,
   handleUpdateField,
 } from "./handlers/profile-update.handler";
+import { handleQuestionSelection } from "./handlers/question-selection.handler";
 import { mongoSession } from "./middlewares/session.middleware";
 import {
   handleStartCommand,
@@ -72,6 +73,14 @@ export class TelegramBot {
       return next();
     });
 
+    // Handle question selection flow
+    this.bot.on("text", async (ctx, next) => {
+      if (ctx.session.questionSelection) {
+        return handleQuestionSelection(ctx);
+      }
+      return next();
+    });
+
     // Handle photo messages in profile setup
     this.bot.on("photo", async (ctx, next) => {
       if (
@@ -102,6 +111,7 @@ export class TelegramBot {
         "Name 📛",
         "Age ⌛",
         "Gender ⚧",
+        "Questions ❓",
         "Photo 📸",
         "Cancel ❌",
       ],

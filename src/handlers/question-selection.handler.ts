@@ -2,6 +2,8 @@ import { Context, Markup } from "telegraf";
 import { questions, categories, getQuestionsByCategory } from "../data/questions";
 import { logger } from "../utils/logger";
 import { QuestionSelectionState } from "../types/session.types";
+import { User } from "../models/user.model";
+import { profileService } from "../services/profile.service";
 
 const QUESTIONS_PER_PAGE = 3;
 
@@ -87,6 +89,36 @@ export async function handleQuestionSelection(ctx: Context) {
       return await ctx.reply("You can only select up to 5 questions. Please deselect some questions.");
     }
 
+    // Check if we're in update mode
+    if (ctx.session.isUpdateMode) {
+      try {
+        // Save questions to user profile
+        await profileService.updateProfile(ctx.from.id, {
+          questions: selectedQuestions,
+        });
+        
+        // Clear update mode and question selection
+        delete ctx.session.isUpdateMode;
+        if (ctx.session.questionSelection) {
+          delete ctx.session.questionSelection;
+        }
+
+        await ctx.reply(
+          "Questions updated successfully! ✨",
+          Markup.keyboard([
+            ["My Profile 👤", "Browse Matches 👥"],
+            ["My Matches 💕", "Update Profile ✏️"],
+          ]).resize()
+        );
+        return;
+      } catch (error) {
+        logger.error("Error updating questions:", error);
+        await ctx.reply("Sorry, there was an error updating your questions. Please try again.");
+        return;
+      }
+    }
+
+    // Original flow for profile setup
     // Save selected questions to profile setup
     if (!ctx.session.profileSetup) {
       ctx.session.profileSetup = {
@@ -114,6 +146,33 @@ export async function handleQuestionSelection(ctx: Context) {
     const categoryQuestions = getQuestionsByCategory(currentCategory);
     const totalPages = Math.ceil(categoryQuestions.length / QUESTIONS_PER_PAGE);
     return await showQuestionPage(ctx, currentCategory, categoryQuestions, currentPage, totalPages, []);
+  }
+
+  // Handle cancel action
+  if (text === "❌ Cancel") {
+    const isUpdateMode = ctx.session.isUpdateMode;
+    
+    // Clear question selection and update mode
+    if (ctx.session.questionSelection) {
+      delete ctx.session.questionSelection;
+    }
+    delete ctx.session.isUpdateMode;
+
+    if (isUpdateMode) {
+      await ctx.reply(
+        "Question update cancelled. Back to profile.",
+        Markup.keyboard([
+          ["My Profile 👤", "Browse Matches 👥"],
+          ["My Matches 💕", "Update Profile ✏️"],
+        ]).resize()
+      );
+    } else {
+      await ctx.reply(
+        "Question selection cancelled. Back to profile setup.",
+        Markup.keyboard([["/start"]]).resize()
+      );
+    }
+    return;
   }
 
   // Handle question selection/deselection
@@ -153,7 +212,7 @@ export async function handleQuestionSelection(ctx: Context) {
 
 async function showCategorySelection(ctx: Context) {
   const categoryButtons = categories.map(category => [category]);
-  const actionButtons = ["✅ Done", "🗑️ Clear Selection"];
+  const actionButtons = ["✅ Done", "🗑️ Clear Selection", "❌ Cancel"];
   
   const keyboard = [
     ...categoryButtons,
@@ -202,7 +261,7 @@ async function showQuestionPage(
     }
   }
 
-  const actionButtons = ["✅ Done", "🗑️ Clear Selection", "⬅️ Back to Categories"];
+  const actionButtons = ["✅ Done", "🗑️ Clear Selection", "⬅️ Back to Categories", "❌ Cancel"];
   
   const keyboard = [
     ...questionButtons,
@@ -224,6 +283,35 @@ async function showQuestionPage(
     parse_mode: "Markdown",
     ...Markup.keyboard(keyboard).resize()
   });
+}
+
+export async function startQuestionSelectionForUpdate(ctx: Context) {
+  if (!ctx.from) return;
+  
+  try {
+    // Get current user data to load existing questions
+    const currentUser = await User.findOne({ telegramId: ctx.from.id });
+    if (!currentUser) {
+      throw new Error("User not found");
+    }
+
+    ensureQuestionSelection(ctx);
+    if (ctx.session.questionSelection) {
+      ctx.session.questionSelection.currentCategoryIndex = 0;
+      ctx.session.questionSelection.currentPage = 0;
+      // Load existing questions as selected
+      ctx.session.questionSelection.selectedQuestions = currentUser.questions || [];
+    }
+
+    // Set update mode flag
+    if (!ctx.session) ctx.session = {};
+    ctx.session.isUpdateMode = true;
+
+    await showCategorySelection(ctx);
+  } catch (error) {
+    logger.error("Error starting question selection for update:", error);
+    await ctx.reply("Sorry, there was an error. Please try again.");
+  }
 }
 
 export async function startQuestionSelection(ctx: Context) {

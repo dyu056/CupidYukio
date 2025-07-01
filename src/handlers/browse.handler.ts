@@ -91,9 +91,15 @@ export async function handleBrowseMatches(ctx: Context) {
     const potentialMatch = ctx.session.browsing.matches[0];
 
     // Get question texts from question IDs
-    const questionTexts = potentialMatch.questions?.map((questionId: string) => {
+    const questionTexts = potentialMatch.questions?.map((questionId: string, index: number) => {
       const question = questions.find(q => q.id === questionId);
-      return question ? question.text.substring(0, 50) + (question.text.length > 50 ? '...' : '') : questionId;
+      if (!question) return questionId;
+      
+      // Show first 80 characters for better preview
+      const preview = question.text.length > 80 
+        ? question.text.substring(0, 80) + '...' 
+        : question.text;
+      return `Q${index + 1}: ${preview}`;
     }) || [];
 
     // Create profile card
@@ -102,7 +108,7 @@ export async function handleBrowseMatches(ctx: Context) {
       "",
       `*Selected Questions:* ${
         questionTexts.length
-          ? questionTexts.join(", ")
+          ? questionTexts.join("\n")
           : "No questions selected"
       }`,
       "",

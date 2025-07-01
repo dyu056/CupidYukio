@@ -32,17 +32,14 @@ export async function handleViewMatches(ctx: Context) {
       // Get question texts from question IDs
       const questionTexts = match.questions?.map((questionId: string) => {
         const question = questions.find(q => q.id === questionId);
-        return question ? question.text.substring(0, 50) + (question.text.length > 50 ? '...' : '') : questionId;
+        return question ? question.text : questionId;
       }) || [];
 
+      // Create basic match info (without questions)
       const matchText = [
         `*${match.name}*, ${match.age}`,
         "",
-        `*Selected Questions:* ${
-          questionTexts.length
-            ? questionTexts.join(", ")
-            : "No questions selected"
-        }`,
+        `*Selected Questions:* ${questionTexts.length} question${questionTexts.length !== 1 ? 's' : ''}`,
         "",
         `[Send Message 💌](https://t.me/${match.username})`,
       ].join("\n");
@@ -51,6 +48,7 @@ export async function handleViewMatches(ctx: Context) {
         Markup.button.callback("Remove Match ❌", `unmatch:${match._id}`),
       ]).reply_markup;
 
+      // Send match info with photo if available
       if (match.photoUrl) {
         await ctx.replyWithPhoto(match.photoUrl, {
           caption: matchText,
@@ -64,6 +62,19 @@ export async function handleViewMatches(ctx: Context) {
           link_preview_options: { is_disabled: true },
           reply_markup: removeButton,
         });
+      }
+
+      // Send each question as a separate message
+      if (questionTexts.length > 0) {
+        for (let i = 0; i < questionTexts.length; i++) {
+          const questionText = questionTexts[i];
+          await ctx.reply(
+            `*${match.name}'s Question ${i + 1}:*\n${questionText}`,
+            { parse_mode: "Markdown" }
+          );
+        }
+      } else {
+        await ctx.reply(`${match.name} has no questions selected`);
       }
     }
 
