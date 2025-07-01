@@ -62,7 +62,7 @@ async function handleAgeInput(ctx: Context) {
   const age = ctx.message.text;
 
   if (!profileService.validateAge(age)) {
-    return await ctx.reply("Please enter your age.");
+    return await ctx.reply("Please enter your age(only 15-100).");
   }
 
   ctx.session.profileSetup.step = "gender";

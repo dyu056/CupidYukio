@@ -47,5 +47,10 @@ A Telegram bot that helps users find and match with potential partners.
 
 
 ## 2025.6.30
-开机自启部署
-将数据库设定为了www.love.fun上的mongodb，未在/root/DateMate/.env中配置R2服务，只维持了基础的运行。
+开机自启已经部署，配置文件/etc/systemd/system/datemate-bot.service
+将.env中数据库设定为了www.love.fun上的mongodb，未在/root/DateMate/.env中配置R2服务，只维持了基础的运行。
+
+服务已经开机enable了，相关指令如下：
+systemctl start datemate-bot.service
+systemctl enable datemate-bot.service
+systemctl restart datemate-bot.service
